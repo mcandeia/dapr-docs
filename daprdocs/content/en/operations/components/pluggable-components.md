@@ -10,32 +10,7 @@ Pluggable Components are [gRPC-based](https://grpc.io/) dapr components generall
 
 ## Declaring
 
-Pluggable Componets are defined using its own [CustomResourceDefinition](https://kubernetes.io/docs/tasks/extend-kubernetes/custom-resources/custom-resource-definitions/) that are not part of the [Component CRD]({{< ref component-schema.md >}}). Instead, Pluggable Components are defined separately and referenced as `type` spec when declaring a dapr component.
-
-```yaml
-apiVersion: dapr.io/v1alpha1
-kind: PluggableComponent
-metadata:
-  name: my-state-store
-spec:
-  componentName: custom-store
-  type: state
-  version: v1
-```
-
-| Field              | Required | Details                                                                                                                    | Example              |
-| ------------------ | :------: | -------------------------------------------------------------------------------------------------------------------------- | -------------------- |
-| apiVersion         |    Y     | The version of the Dapr (and Kubernetes if applicable) API you are calling                                                 | `dapr.io/v1alpha1`   |
-| kind               |    Y     | The type of CRD. For Pluggable Components it must always be `PluggableComponent`                                           | `PluggableComponent` |
-| **metadata**       |    -     | **Information about the pluggable component registration**                                                                 |
-| metadata.name      |    Y     | The name of the kubrnetes object                                                                                           | `my-state-store`     |
-| metadata.namespace |    N     | The namespace for the pluggable component for hosting environments with namespaces                                         | `myapp-namespace`    |
-| **spec**           |    -     | **Detailed information on the pluggable component resource**                                                               |
-| spec.type          |    Y     | The type of the Pluggable Component, it should be one of the following: `state`, `pubsub`, `inputbinding`, `outputbinding` | `state`              |
-| spec.version       |    Y     | The version of the Pluggable Component                                                                                     | `v1`                 |
-| spec.componentName |    N     | The Component name that will be referenced. The metadata.Name is used when not specified.                                  | `custom-store`       |
-
-the mentioned pluggable component will be referenced later with using the complete name of it: `state.custom-store` using the [Component CRD]({{< ref component-schema.md >}}).
+Pluggable Componets are defined using the [Component CRD]({{< ref component-schema.md >}}) when no built-in components are found with the specified `type`.
 
 ```yaml
 apiVersion: dapr.io/v1alpha1
@@ -74,15 +49,13 @@ git clone https://github.com/dapr/dapr.git
 
 > You can also [download as a zip file](https://github.com/dapr/dapr/archive/refs/heads/master.zip), and extract using the [unzip](https://linux.die.net/man/1/unzip) command.
 
-Once you have the proto files in your machine, go to the repository root folder, copy out the proto directory [dapr/proto](https://github.com/dapr/dapr/tree/master/dapr/proto).
+Once you have the proto files in your machine, go to the repository root folder, copy out the proto directory [dapr/proto/components/v1](https://github.com/dapr/dapr/tree/master/dapr/proto/components/v1).
 
-> Note that you only need the `components/v1` folder and the `common/v1` folder leave the rest untouched.
+> Note that you only need the `components/v1` folder leave the rest untouched.
 
-### Step 3: Implementing your desired Service
+### Step 3: Prepare the environment
 
 You can choose either, [StateStore](https://github.com/dapr/dapr/blob/9da16f4a2ee9658dc7b26cf154d75c2e7a3128b7/dapr/proto/components/v1/state.proto#L119), [PubSub](https://github.com/dapr/dapr/blob/9da16f4a2ee9658dc7b26cf154d75c2e7a3128b7/dapr/proto/components/v1/pubsub.proto#L23) or [Bindings](https://github.com/dapr/dapr/blob/master/dapr/proto/components/v1/bindings.proto#L1) to implement your component, pick one of them and implement the desired service using your desired language.
-
-<img src="/images/pluggable-component-arch.png" width=800 alt="Diagram showing the final MemStore design">
 
 Start with an empty folder and create a new .NET gRPC service by running:
 
@@ -116,7 +89,7 @@ Now our directory tree should be something like this:
 5 directories, 12 files
 ```
 
-Remove the file `Protos/greet.proto` and copy out the `dapr/proto/components/v1` and `dapr/proto/common/v1` folders from dapr repository to the `DaprMemStoreComponent/Protos` directory.
+Remove the file `Protos/greet.proto` and copy out the `dapr/proto/components/v1` folder from dapr repository to the `DaprMemStoreComponent/Protos` directory.
 
 ```shell
 ➜  memstore-dotnet tree .
@@ -129,9 +102,6 @@ Remove the file `Protos/greet.proto` and copy out the `dapr/proto/components/v1`
     ├── Protos
     │   └── dapr
     │       └── proto
-    │           ├── common
-    │           │   └── v1
-    │           │       └── common.proto
     │           └── components
     │               └── v1
     │                   ├── bindings.proto
@@ -149,7 +119,7 @@ Remove the file `Protos/greet.proto` and copy out the `dapr/proto/components/v1`
         ├── project.assets.json
         └── project.nuget.cache
 
-11 directories, 16 files
+9 directories, 16 files
 ```
 
 Now, open the project file `DaprMemStoreComponent.csproj`, and find the live above
@@ -164,11 +134,10 @@ Remove that line, and add the following ones:
     <Protobuf Include="Protos\dapr\proto\components\v1\bindings.proto" ProtoRoot="Protos" GrpcServices="Client,Server" />
     <Protobuf Include="Protos\dapr\proto\components\v1\pubsub.proto" ProtoRoot="Protos" GrpcServices="Client,Server" />
     <Protobuf Include="Protos\dapr\proto\components\v1\state.proto" ProtoRoot="Protos" GrpcServices="Client,Server" />
-    <Protobuf Include="Protos\dapr\proto\components\v1\shared.proto" ProtoRoot="Protos" GrpcServices="Client" />
-    <Protobuf Include="Protos\dapr\proto\common\v1\common.proto" ProtoRoot="Protos" GrpcServices="Client" />
+    <Protobuf Include="Protos\dapr\proto\components\v1\common.proto" ProtoRoot="Protos" GrpcServices="Client" />
 ```
 
-Now let's create our `MemStoreService`, remove the `GreeterService.cs` and create our `MemStoreService.cs` with the following content,
+Now let's create our `MemStoreService`. First, remove the `GreeterService.cs` and then create our `MemStoreService.cs` with the following content,
 
 ```csharp
 using Dapr.Proto.Components.V1;
@@ -185,7 +154,7 @@ public class MemStoreService : StateStore.StateStoreBase
 }
 ```
 
-Now, go to the `Program.cs` and find the line `app.MapGrpcService<GreeterService>();` and `GreeterService` by our `MemStoreService` the final result will be,
+Now, go to the `Program.cs` and find the line `app.MapGrpcService<GreeterService>();` and replace `GreeterService` by our `MemStoreService`, the final result will be,
 
 ```csharp
 using DaprMemStoreComponent.Services;
@@ -213,8 +182,194 @@ app.MapGet("/", () => "Communication with gRPC endpoints must be made through a 
 app.Run();
 ```
 
+At this point we are ready to build and run our service, let's test it by running `dotnet build`
+
+```shell
+➜  DaprMemStoreComponent dotnet build
+[redacted]
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:04.94
+```
+
+Run the state store service by running `dotnet run`
+
+```shell
+➜  DaprMemStoreComponent dotnet run
+Building...
+warn: Microsoft.AspNetCore.Server.Kestrel[0]
+      Overriding address(es) 'http://localhost:5259, https://localhost:7089'. Binding to endpoints defined via IConfiguration and/or UseKestrel() instead.
+info: Microsoft.Hosting.Lifetime[14]
+      Now listening on: http://localhost:5000
+info: Microsoft.Hosting.Lifetime[0]
+      Application started. Press Ctrl+C to shut down.
+info: Microsoft.Hosting.Lifetime[0]
+      Hosting environment: Development
+info: Microsoft.Hosting.Lifetime[0]
+```
+
+To test that our service are running I'll use the [grpcurl](https://github.com/fullstorydev/grpcurl) library, you can download and use it or use your preferred tool.
+
+Let's call the `Features` method from StateStore service, within the `DaprMemStoreComponent` folder run the following command: `grpcurl --plaintext --import-path "$PWD/Protos" --proto dapr/proto/components/v1/state.proto localhost:5000 dapr.proto.components.v1.StateStore/Features`
+
+```shell
+➜  DaprMemStoreComponent grpcurl --plaintext --import-path "$PWD/Protos" --proto dapr/proto/components/v1/state.proto localhost:5000 dapr.proto.components.v1.StateStore/Features
+ERROR:
+  Code: Unimplemented
+  Message:
+```
+
+If you see a `Unimplemented` is because it is working!
+
+### Step 4: Unix Socket and gRPC Reflection
+
+As prior mentioned, gRPC components are backed by an Unix Domain Socket, you must have noticed that our service is not using an unix socket, instead we are running via HTTP2. Let's change that.
+
+Open the `Program.cs` file and add Kestrel configuration to listen to a socket, for now we are going use the `/tmp/` directory for simplicity.
+
+```csharp
+using DaprMemStoreComponent.Services;
+
+var socket = "/tmp/custom-store.sock";
+if (File.Exists(socket))
+{
+    Console.WriteLine("Removing existing socket"); // cleanup step.
+    File.Delete(socket);
+}
+
+var builder = WebApplication.CreateBuilder(args);
+
+// Additional configuration is required to successfully run gRPC on macOS.
+// For instructions on how to configure Kestrel and gRPC clients on macOS, visit https://go.microsoft.com/fwlink/?linkid=2099682
+
+// Add services to the container.
+builder.WebHost.ConfigureKestrel(options =>
+            {
+                options.ListenUnixSocket(socket); // listen to the unix socket
+            });
+builder.Services.AddGrpc();
+
+var app = builder.Build();
+
+// Configure the HTTP request pipeline.
+app.MapGrpcService<MemStoreService>();
+app.MapGet("/", () => "Communication with gRPC endpoints must be made through a gRPC client. To learn how to create a client, visit: https://go.microsoft.com/fwlink/?linkid=2086909");
+
+app.Run();
+```
+
+Let's run again our service
+
+```shell
+➜  DaprMemStoreComponent dotnet run
+Building...
+warn: Microsoft.AspNetCore.Server.Kestrel[0]
+      Overriding address(es) 'http://localhost:5259, https://localhost:7089'. Binding to endpoints defined via IConfiguration and/or UseKestrel() instead.
+info: Microsoft.Hosting.Lifetime[14]
+      Now listening on: http://unix:/tmp/custom-store.sock
+info: Microsoft.Hosting.Lifetime[0]
+      Application started. Press Ctrl+C to shut down.
+info: Microsoft.Hosting.Lifetime[0]
+      Hosting environment: Development
+info: Microsoft.Hosting.Lifetime[0]
+```
+
+Great! Now we have our component running using a unix socket, let's try out the same call we did, but now we should hint that the connection is a unix socket.
+
+```shell
+grpcurl -unix --plaintext --import-path "$PWD/Protos" --proto dapr/proto/components/v1/state.proto /tmp/custom-store.sock dapr.proto.components.v1.StateStore/Features
+```
+
+```shell
+➜  DaprMemStoreComponent grpcurl -unix --plaintext --import-path "$PWD/Protos" --proto dapr/proto/components/v1/state.proto /tmp/custom-store.sock dapr.proto.components.v1.StateStore/Features
+ERROR:
+  Code: Unimplemented
+  Message:
+```
+
+Great! Now we have our service backed by a unix socket. The next required change is to enabling gRPC reflection as it is the way the dapr runtime know which services your component implements, it works out-of-the-box by just using reflection API.
+
+First add the `Grpc.AspNetCore.Server.Reflection` lib
+
+```shell
+dotnet add package Grpc.AspNetCore.Server.Reflection --version 2.49.0
+```
+
+Next, add enable gRPC reflection to our service:
+
+```csharp
+using DaprMemStoreComponent.Services;
+using Microsoft.AspNetCore.Server.Kestrel.Core;
+
+var socket = "/tmp/custom-store.sock";
+if (File.Exists(socket))
+{
+    Console.WriteLine("Removing existing socket");
+    File.Delete(socket);
+}
+
+var builder = WebApplication.CreateBuilder(args);
+
+
+// Additional configuration is required to successfully run gRPC on macOS.
+// For instructions on how to configure Kestrel and gRPC clients on macOS, visit https://go.microsoft.com/fwlink/?linkid=2099682
+
+// Add services to the container.
+builder.WebHost.ConfigureKestrel(options =>
+            {
+                options.ListenUnixSocket(socket, listenOptions =>
+                {
+                    listenOptions.Protocols = HttpProtocols.Http2;
+                });
+            });
+builder.Services.AddGrpc();
+builder.Services.AddGrpcReflection();
+
+var app = builder.Build();
+
+// Configure the HTTP request pipeline.
+app.MapGrpcReflectionService();
+app.MapGrpcService<MemStoreService>();
+app.MapGet("/", () => "Communication with gRPC endpoints must be made through a gRPC client. To learn how to create a client, visit: https://go.microsoft.com/fwlink/?linkid=2086909");
+
+app.Run();
+```
+
+Now we are ready to go,
+
+### Step 5: Implementing your desired Service
+
+<img src="/images/pluggable-component-arch.png" width=800 alt="Diagram showing the final MemStore design">
+
+Go to our `MemStoreService.cs` and let's override the ListFeature method
+
+```csharp
+using Dapr.Client.Autogen.Grpc.v1;
+using Dapr.Proto.Components.V1;
+using Grpc.Core;
+
+namespace DaprMemStoreComponent.Services;
+
+public class MemStoreService : StateStore.StateStoreBase
+{
+    private readonly ILogger<MemStoreService> _logger;
+    public MemStoreService(ILogger<MemStoreService> logger)
+    {
+        _logger = logger;
+    }
+
+    public override Task<FeaturesResponse> Features(FeaturesRequest _, ServerCallContext context)
+    {
+        var resp = new FeaturesResponse();
+        resp.Feature.Add("TRANSACTIONAL");
+        return Task.FromResult(resp);
+    }
+}
+```
+
 {{% /codetab %}}
 
 {{< /tabs >}}
-
-# https://learn.microsoft.com/en-us/aspnet/core/grpc/basics?view=aspnetcore-6.0#c-tooling-support-for-proto-files
