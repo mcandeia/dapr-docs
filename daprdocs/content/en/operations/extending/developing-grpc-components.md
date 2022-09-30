@@ -1,39 +1,39 @@
 ---
 type: docs
-title: "Developing Components"
-linkTitle: "Developing Components"
+title: "Developing gRPC-based Pluggable Components"
+linkTitle: "Developing gRPC-based Pluggable Components"
 weight: 250
 description: "Extending dapr with external gRPC-based components"
 ---
 
 [gRPC-based](https://grpc.io/) Dapr components are typically run as containers or processes that communicate with the dapr main process via [Unix Domain Sockets](https://en.wikipedia.org/wiki/Unix_domain_socket).
 
-## Developing a Pluggable Component from Scratch
+## Developing a Pluggable Component from scratch
 
 {{< tabs ".NET" >}}
 {{% codetab %}}
 
 ### Step 1: Prerequisites
 
-For this tutorial, we assume that you have minimal knowledge of [gRPC and protocol buffers](https://grpc.io/), and that you chose a programming language [that supports gRPC](https://grpc.io/docs/languages/).
+For this tutorial, you must have minimal knowledge of [gRPC and protocol buffers](https://grpc.io/), and that you chose a programming language [that supports gRPC](https://grpc.io/docs/languages/).
 
-For simplicity, all code samples will use the generated code from the [protoc](https://developers.google.com/protocol-buffers/docs/downloads) tool or supported gRPC build tools by languages.
+For simplicity, all code samples uses the generated code from the [protoc](https://developers.google.com/protocol-buffers/docs/downloads) tool or supported gRPC build tools by languages.
 
 As previously mentioned, dapr uses a Unix Domain Socket to communicate with gRPC-based components, which means that as a prerequisite you also need a UNIX-like system, or for Windows users, [WSL](https://learn.microsoft.com/en-us/windows/wsl/install) should be sufficient.
 
-Also, we are going to use [.NET Core 6+](https://dotnet.microsoft.com/en-us/download)
+Also, install [.NET Core 6+](https://dotnet.microsoft.com/en-us/download)
 
 This tutorial is based on the [official Microsoft documentation](https://learn.microsoft.com/en-us/aspnet/core/grpc/basics?view=aspnetcore-6.0#c-tooling-support-for-proto-files).
 
-### Step 2: Downloading the quickstart code
+### Step 2: Downloading the base template project
 
-We've prepared a quickstart sample code that helps you to skip a few manual steps like cloning dapr repository and adding the required libraries. Get started by downloading and unzipping it using the following <a href="/code/dotnet-memstore.zip">link</a>.
+We've prepared a blueprint project that helps you to skip a few manual steps like cloning dapr repository and adding the required libraries. Get started by downloading and unzipping it using the following <a href="/code/dotnet-memstore.zip">link</a>.
 
-This quickstart contains all the required bits to start developing a gRPC-based component from scratch, including protobuf definitions and an unimplemented InMemory StateStore that we're going to implement.
+This template contains all the required changes to start developing a gRPC-based component from scratch, including protobuf definitions and an unimplemented InMemory StateStore that we're going to implement.
 
 ### Step 3: Building and running
 
-At this point, we are ready to build and run our component. Let's test it by running `dotnet build`
+At this point, you are ready to build and run the component. Let's test it out by running `dotnet build`
 
 ```
 ➜  DaprMemStoreComponent dotnet build
@@ -51,7 +51,7 @@ Time Elapsed 00:00:01.03
 
 Great!
 
-Now, let's run the StateStore service by issuing `dotnet run`
+Now, let's run the StateStore service by issuing a `dotnet run`
 
 ```
 ➜  DaprMemStoreComponent dotnet run
@@ -67,9 +67,9 @@ info: Microsoft.Hosting.Lifetime[0]
 info: Microsoft.Hosting.Lifetime[0]
 ```
 
-To see it working, I'll use the [grpc_cli](https://github.com/grpc/grpc/blob/master/doc/command_line_tool.md) tool for making gRPC calls. You can download and use it or use your preferred tool.
+To see it working, you can use the [grpc_cli](https://github.com/grpc/grpc/blob/master/doc/command_line_tool.md) tool for making gRPC calls. You can download and use it or use your preferred tool.
 
-Once properly downloaded and installed, open a new terminal, and let's now invoke the `Features` method from the StateStore service using the following command: `grpc_cli call unix:///tmp/dapr-components-sockets/memstore.sock Features ''`
+Once properly downloaded and installed, open a new terminal instance, and let's invoke the `Features` method from the StateStore service, using the following command: `grpc_cli call unix:///tmp/dapr-components-sockets/memstore.sock Features ''`
 
 ```
 ➜ memstore-dotnet grpc_cli call unix:///tmp/dapr-components-sockets/memstore.sock Features ''
@@ -118,7 +118,7 @@ Great, stop the current `dotnet run` execution and reissue the run command.
 
 Let's make the same call as we did before: `grpc_cli call unix:///tmp/dapr-components-sockets/memstore.sock Features ''`
 
-Now we should get our expected OK response;
+Now you should get the OK as a response;
 
 ```
 ➜ memstore-dotnet grpc_cli call unix:///tmp/dapr-components-sockets/memstore.sock Features ''
@@ -129,9 +129,9 @@ server : Kestrel
 Rpc succeeded with OK status
 ```
 
-As the goal here is to create a simple in-memory statestore, let's use a .NET `ConcurrentDictionary` as our persistence layer. Go again to the `MemStoreService.cs`
+As the goal here is to create a simple in-memory statestore, let's use a .NET `ConcurrentDictionary` as component persistence layer. Go again to the `MemStoreService.cs`
 
-> Note: It should be static because the framework recreates our StateStore with each request.
+> Note: It should be static because the framework recreates our StateStore for every request.
 
 ```csharp
 using System.Collections.Concurrent;
@@ -158,7 +158,7 @@ public class MemStoreService : StateStore.StateStoreBase
 
 ```
 
-Now let's override the Get and Set methods,
+Now let's override the Get, Set and BulkSet methods,
 
 ```csharp
 using System.Collections.Concurrent;
@@ -199,6 +199,15 @@ public class MemStoreService : StateStore.StateStoreBase
     {
         Storage[request.Key] = request.Value?.ToStringUtf8();
         return Task.FromResult(new SetResponse());
+    }
+
+    public override Task<BulkSetResponse> BulkSet(BulkSetRequest request, ServerCallContext ctx)
+    {
+        foreach (var item in request.Items)
+        {
+            Storage[item.Key] = item.Value?.ToStringUtf8();
+        }
+        return Task.FromResult(new BulkSetResponse { });
     }
 }
 ```
@@ -237,11 +246,11 @@ data: "my_value"
 Rpc succeeded with OK status
 ```
 
-At this point our component is partially implemented, more methods like `bulk*` operations should be added to consider functionally complete, but there are two important methods that should be implemented to consider ready to be used by dapr, they are `Init` and `Ping` methods.
+At this point your component is partially implemented, more methods like `bulk*` operations should be added to consider functionally complete, but there are two important methods that should be implemented to consider ready to be used by dapr, they are `Init` and `Ping` methods.
 
 ### Step 5: Init and Ping
 
-The ping method will be used by dapr runtime as a liveness probe, so it's up to you to decide what is `liveness` from your component point of view. As a simple implementation `Ping` can just respond without any deep check, but it is a requirement to work with daprd.
+The dapr runtime uses the ping method as a liveness probe, so it's up to you to decide what is `liveness` from your component point of view. As a simple implementation, `Ping` can just respond back without any deep check, but implementing it is a requirement to work with daprd.
 
 ```csharp
     public override Task<PingResponse> Ping(PingRequest request, ServerCallContext ctx)
@@ -250,11 +259,11 @@ The ping method will be used by dapr runtime as a liveness probe, so it's up to 
     }
 ```
 
-Init method is called as part of dapr initialization, it will be called first before any interaction with others components methods. The component can use init to create database connections, make async calls or whatever is necessary to consider your component ready to work, be mindful on time consuming operations because there are timeouts associated to initializing components.
+Init method is called as part of dapr initialization, it is called at first before any interaction with others components methods. The component can use init to create database connections, make async calls or whatever is necessary to consider your component ready to work, be mindful on time consuming operations because there are timeouts associated to initializing components.
 
 Init receives component metadata as a parameter and there are no semantics associated with it, metadata can be anything the component needs to be ready, like connection strings, timeouts or services addresses.
 
-Our final MemStoreService will be:
+Let's see the final MemStoreService version,
 
 ```csharp
 using System.Collections.Concurrent;
@@ -297,6 +306,15 @@ public class MemStoreService : StateStore.StateStoreBase
         return Task.FromResult(new SetResponse());
     }
 
+    public override Task<BulkSetResponse> BulkSet(BulkSetRequest request, ServerCallContext ctx)
+    {
+        foreach (var item in request.Items)
+        {
+            Storage[item.Key] = item.Value?.ToStringUtf8();
+        }
+        return Task.FromResult(new BulkSetResponse { });
+    }
+
     public override Task<InitResponse> Init(InitRequest request, ServerCallContext ctx)
     {
         return Task.FromResult(new InitResponse { });
@@ -309,22 +327,13 @@ public class MemStoreService : StateStore.StateStoreBase
 }
 ```
 
-> There are other missing methods like `bulk*` and `delete`, at this point you might be able to implement it without our help.
-
-## Declaring
-
-gRPC-based Pluggable Componets are defined using the [Component CRD]({{< ref component-schema.md >}}) and its `type` is derived from the socket name (without the file extension).
-
-```yaml
-apiVersion: dapr.io/v1alpha1
-kind: Component
-metadata:
-  name: prod-mystore
-spec:
-  type: state.memstore
-  version: v1
-```
+> There are other missing methods like `bulk*` and `delete`, however at this point you might be able to implement it without any issues.
 
 {{% /codetab %}}
 
 {{< /tabs >}}
+
+## Next Steps
+
+- Follow these guides on:
+  - [How-To: Use a gRPC-based Pluggable Component]({{< ref using-grpc-components.md >}})
