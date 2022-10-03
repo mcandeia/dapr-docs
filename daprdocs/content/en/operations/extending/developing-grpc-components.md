@@ -3,10 +3,10 @@ type: docs
 title: "Developing gRPC-based Pluggable Components"
 linkTitle: "Developing gRPC-based Pluggable Components"
 weight: 250
-description: "Extending dapr with external gRPC-based components"
+description: "Extending Dapr with external gRPC-based components"
 ---
 
-[gRPC-based](https://grpc.io/) Dapr components are typically run as containers or processes that communicate with the dapr main process via [Unix Domain Sockets](https://en.wikipedia.org/wiki/Unix_domain_socket).
+[gRPC-based](https://grpc.io/) Dapr components are typically run as containers or processes that communicate with the Dapr main process via [Unix Domain Sockets](https://en.wikipedia.org/wiki/Unix_domain_socket).
 
 ## Developing a Pluggable Component from scratch
 
@@ -15,28 +15,31 @@ description: "Extending dapr with external gRPC-based components"
 
 ### Step 1: Prerequisites
 
-For this tutorial, you must have minimal knowledge of [gRPC and protocol buffers](https://grpc.io/), and that you chose a programming language [that supports gRPC](https://grpc.io/docs/languages/).
+For this tutorial, you must:
+
+1. Have some knowledge of how to use and build services using [gRPC and protocol buffers](https://grpc.io/). In doubt, check the their [Quick Start](https://grpc.io/docs/languages/csharp/quickstart/) and [Basics tutorial](https://grpc.io/docs/languages/csharp/quickstart/).
+2. Use a [gRPC-supported programming language](https://grpc.io/docs/languages/).
 
 For simplicity, all code samples uses the generated code from the [protoc](https://developers.google.com/protocol-buffers/docs/downloads) tool or supported gRPC build tools by languages.
 
-As previously mentioned, dapr uses a Unix Domain Socket to communicate with gRPC-based components, which means that as a prerequisite you also need a UNIX-like system, or for Windows users, [WSL](https://learn.microsoft.com/en-us/windows/wsl/install) should be sufficient.
+As previously mentioned, Dapr uses a Unix Domain Socket to communicate with gRPC-based components, which means that as a prerequisite you also need a UNIX-like system, or for Windows users, [WSL](https://learn.microsoft.com/en-us/windows/wsl/install) should be sufficient.
 
-Also, install [.NET Core 6+](https://dotnet.microsoft.com/en-us/download)
+Install [.NET Core 6+](https://dotnet.microsoft.com/en-us/download)
 
-This tutorial is based on the [official Microsoft documentation](https://learn.microsoft.com/en-us/aspnet/core/grpc/basics?view=aspnetcore-6.0#c-tooling-support-for-proto-files).
+This tutorial is based on the [official Microsoft documentation for development using Protocol Buffers](https://learn.microsoft.com/en-us/aspnet/core/grpc/basics?view=aspnetcore-6.0#c-tooling-support-for-proto-files).
 
 ### Step 2: Downloading the base template project
 
-We've prepared a blueprint project that helps you to skip a few manual steps like cloning dapr repository and adding the required libraries. Get started by downloading and unzipping it using the following <a href="/code/dotnet-memstore.zip">link</a>.
+We've prepared a blueprint project that helps you to skip a few manual steps like cloning Dapr repository and adding the required libraries. Get started by downloading and unzipping it using the following <a href="/code/dotnet-memstore.zip">link</a>.
 
-This template contains all the required changes to start developing a gRPC-based component from scratch, including protobuf definitions and an unimplemented InMemory StateStore that you are going to implement.
+This template contains all the required changes to start developing a gRPC-based component from scratch, including protobuf definitions and an unimplemented in-memory StateStore that you are going to implement.
 
 ### Step 3: Building and running
 
 At this point, you are ready to build and run the component. Let's test it out by running `dotnet build`
 
 ```
-➜  DaprMemStoreComponent dotnet build
+$  DaprMemStoreComponent dotnet build
 MSBuild version 17.3.0+92e077650 for .NET
   Determining projects to restore...
   All projects are up-to-date for restore.
@@ -49,17 +52,17 @@ Build succeeded.
 Time Elapsed 00:00:01.03
 ```
 
-Great!
+Great! You've just built your first gRPC-based pluggable component: an in-memory StateStore component!
 
-Now, let's run the StateStore service by issuing a `dotnet run`
+Now, let's run this StateStore service by issuing a `dotnet run`
 
 ```
-➜  DaprMemStoreComponent dotnet run
+$  DaprMemStoreComponent dotnet run
 Building...
 warn: Microsoft.AspNetCore.Server.Kestrel[0]
       Overriding address(es) 'http://localhost:5259, https://localhost:7089'. Binding to endpoints defined via IConfiguration and/or UseKestrel() instead.
 info: Microsoft.Hosting.Lifetime[14]
-      Now listening on: http://unix:/tmp/dapr-components-sockets/memstore.sock
+      Now listening on: http://unix:/tmp/Dapr-components-sockets/memstore.sock
 info: Microsoft.Hosting.Lifetime[0]
       Application started. Press Ctrl+C to shut down.
 info: Microsoft.Hosting.Lifetime[0]
@@ -69,11 +72,11 @@ info: Microsoft.Hosting.Lifetime[0]
 
 To see it working, you can use the [grpc_cli](https://github.com/grpc/grpc/blob/master/doc/command_line_tool.md) tool for making gRPC calls. You can download and use it or use your preferred tool.
 
-Once properly downloaded and installed, open a new terminal instance, and let's invoke the `Features` method from the StateStore service, using the following command: `grpc_cli call unix:///tmp/dapr-components-sockets/memstore.sock Features ''`
+Once properly downloaded and installed, open a new terminal instance, and let's invoke the `Features` method from the StateStore service, using the following command: `grpc_cli call unix:///tmp/Dapr-components-sockets/memstore.sock Features ''`
 
 ```
-➜ memstore-dotnet grpc_cli call unix:///tmp/dapr-components-sockets/memstore.sock Features ''
-connecting to unix:///tmp/dapr-components-sockets/memstore.sock
+$ memstore-dotnet grpc_cli call unix:///tmp/Dapr-components-sockets/memstore.sock Features ''
+connecting to unix:///tmp/Dapr-components-sockets/memstore.sock
 Received trailing metadata from server:
 content-length : 0
 date : Thu, 29 Sep 2022 18:26:54 GMT
@@ -116,13 +119,13 @@ public class MemStoreService : StateStore.StateStoreBase
 
 Great, stop the current `dotnet run` execution and reissue the run command.
 
-Let's make the same call as you did before: `grpc_cli call unix:///tmp/dapr-components-sockets/memstore.sock Features ''`
+Let's make the same call as you did before: `grpc_cli call unix:///tmp/Dapr-components-sockets/memstore.sock Features ''`
 
 Now you should get the OK as a response;
 
 ```
-➜ memstore-dotnet grpc_cli call unix:///tmp/dapr-components-sockets/memstore.sock Features ''
-connecting to unix:///tmp/dapr-components-sockets/memstore.sock
+$ memstore-dotnet grpc_cli call unix:///tmp/Dapr-components-sockets/memstore.sock Features ''
+connecting to unix:///tmp/Dapr-components-sockets/memstore.sock
 Received initial metadata from server:
 date : Fri, 30 Sep 2022 14:36:56 GMT
 server : Kestrel
@@ -215,14 +218,14 @@ public class MemStoreService : StateStore.StateStoreBase
 Great, let's re-run your service and try out a simple set call:
 
 ```shell
-grpc_cli call unix:///tmp/dapr-components-sockets/memstore.sock dapr.proto.components.v1.StateStore/Set "key:'my_key', value:'my_value'"
+grpc_cli call unix:///tmp/Dapr-components-sockets/memstore.sock Dapr.proto.components.v1.StateStore/Set "key:'my_key', value:'my_value'"
 ```
 
 You should receive an OK
 
 ```
-➜ memstore-dotnet grpc_cli call unix:///tmp/dapr-components-sockets/memstore.sock dapr.proto.components.v1.StateStore/Set "key:'my_key', value:'my_value'"
-connecting to unix:///tmp/dapr-components-sockets/memstore.sock
+$ memstore-dotnet grpc_cli call unix:///tmp/Dapr-components-sockets/memstore.sock Dapr.proto.components.v1.StateStore/Set "key:'my_key', value:'my_value'"
+connecting to unix:///tmp/Dapr-components-sockets/memstore.sock
 Received initial metadata from server:
 date : Fri, 30 Sep 2022 14:49:38 GMT
 server : Kestrel
@@ -232,13 +235,13 @@ Rpc succeeded with OK status
 Now let's retrieve the value,
 
 ```shell
-grpc_cli call unix:///tmp/dapr-components-sockets/memstore.sock dapr.proto.components.v1.StateStore/Get "key:'my_key'"
+grpc_cli call unix:///tmp/Dapr-components-sockets/memstore.sock Dapr.proto.components.v1.StateStore/Get "key:'my_key'"
 ```
 
 ```
-➜  memstore-dotnet grpc_cli call unix:///tmp/dapr-components-sockets/memstore.sock dapr.proto.components.v1.StateStore/Get "key:'my_key'"
+$  memstore-dotnet grpc_cli call unix:///tmp/Dapr-components-sockets/memstore.sock Dapr.proto.components.v1.StateStore/Get "key:'my_key'"
 
-connecting to unix:///tmp/dapr-components-sockets/memstore.sock
+connecting to unix:///tmp/Dapr-components-sockets/memstore.sock
 Received initial metadata from server:
 date : Fri, 30 Sep 2022 15:36:00 GMT
 server : Kestrel
@@ -246,11 +249,11 @@ data: "my_value"
 Rpc succeeded with OK status
 ```
 
-At this point your component is partially implemented, more methods like `bulk*` operations should be added to consider functionally complete, but there are two important methods that should be implemented to consider ready to be used by dapr, they are `Init` and `Ping` methods.
+At this point your component is partially implemented, more methods like `bulk*` operations should be added to consider functionally complete, but there are two important methods that should be implemented to consider ready to be used by Dapr, they are `Init` and `Ping` methods.
 
 ### Step 5: Init and Ping
 
-The dapr runtime uses the ping method as a liveness probe, so it's up to you to decide what is `liveness` from your component point of view. As a simple implementation, `Ping` can just respond back without any deep check, but implementing it is a requirement to work with daprd.
+The Dapr runtime uses the ping method as a liveness probe, so it's up to you to decide what is `liveness` from your component point of view. As a simple implementation, `Ping` can just respond back without any deep check, but implementing it is a requirement to work with Daprd.
 
 ```csharp
     public override Task<PingResponse> Ping(PingRequest request, ServerCallContext ctx)
@@ -259,7 +262,7 @@ The dapr runtime uses the ping method as a liveness probe, so it's up to you to 
     }
 ```
 
-Init method is called as part of dapr initialization, it is called at first before any interaction with others components methods. The component can use init to create database connections, make async calls or whatever is necessary to consider your component ready to work, be mindful on time consuming operations because there are timeouts associated to initializing components.
+Init method is called as part of Dapr initialization, it is called at first before any interaction with others components methods. The component can use init to create database connections, make async calls or whatever is necessary to consider your component ready to work, be mindful on time consuming operations because there are timeouts associated to initializing components.
 
 Init receives component metadata as a parameter and there are no semantics associated with it, metadata can be anything the component needs to be ready, like connection strings, timeouts or services addresses.
 
