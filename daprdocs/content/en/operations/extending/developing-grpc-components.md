@@ -89,7 +89,7 @@ Now you are ready to go,
 
 <img src="/images/pluggable-component-arch.png" width=800 alt="Diagram showing the final MemStore design">
 
-Go to our `MemStoreService.cs` and let's override the Features method.
+Go to your `MemStoreService.cs` and let's override the Features method.
 
 ```csharp
 using Dapr.Client.Autogen.Grpc.v1;
@@ -131,7 +131,7 @@ Rpc succeeded with OK status
 
 As the goal here is to create a simple in-memory statestore, let's use a .NET `ConcurrentDictionary` as component persistence layer. Go again to the `MemStoreService.cs`
 
-> Note: It should be static because the framework recreates our StateStore for every request.
+> Note: It should be static because the framework recreates your StateStore for every request.
 
 ```csharp
 using System.Collections.Concurrent;
@@ -212,7 +212,7 @@ public class MemStoreService : StateStore.StateStoreBase
 }
 ```
 
-Great, let's re-run our service and try out a simple set call:
+Great, let's re-run your service and try out a simple set call:
 
 ```shell
 grpc_cli call unix:///tmp/dapr-components-sockets/memstore.sock dapr.proto.components.v1.StateStore/Set "key:'my_key', value:'my_value'"
