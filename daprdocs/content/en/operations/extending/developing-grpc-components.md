@@ -29,7 +29,7 @@ This tutorial is based on the [official Microsoft documentation](https://learn.m
 
 We've prepared a blueprint project that helps you to skip a few manual steps like cloning dapr repository and adding the required libraries. Get started by downloading and unzipping it using the following <a href="/code/dotnet-memstore.zip">link</a>.
 
-This template contains all the required changes to start developing a gRPC-based component from scratch, including protobuf definitions and an unimplemented InMemory StateStore that we're going to implement.
+This template contains all the required changes to start developing a gRPC-based component from scratch, including protobuf definitions and an unimplemented InMemory StateStore that you are going to implement.
 
 ### Step 3: Building and running
 
@@ -83,7 +83,7 @@ Rpc failed with status code 12, error message:
 
 Great, don't worry about errors for now.
 
-Now we are ready to go,
+Now you are ready to go,
 
 ### Step 4: Implementing an In-Memory StateStore
 
@@ -116,7 +116,7 @@ public class MemStoreService : StateStore.StateStoreBase
 
 Great, stop the current `dotnet run` execution and reissue the run command.
 
-Let's make the same call as we did before: `grpc_cli call unix:///tmp/dapr-components-sockets/memstore.sock Features ''`
+Let's make the same call as you did before: `grpc_cli call unix:///tmp/dapr-components-sockets/memstore.sock Features ''`
 
 Now you should get the OK as a response;
 
