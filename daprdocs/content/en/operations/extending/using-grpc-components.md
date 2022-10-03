@@ -39,6 +39,9 @@ spec:
 
 Init dapr by following the [tutorial]({{< ref get-started-api.md >}}), and make sure that your component CRD is placed in the right folder.
 
+> Note: 1.9.0 is the minimum dapr version that supports gRPC-based Pluggable Components
+> specify the runtime version by using `--runtime-version` flag
+
 That's it! Now we are able to call the statestore APIs via Dapr API.
 
 See it working by running
