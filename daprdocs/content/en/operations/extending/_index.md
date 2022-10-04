@@ -1,7 +1,7 @@
 ---
 type: docs
-title: "Extending dapr"
-linkTitle: "Extending dapr"
+title: "Extending Dapr"
+linkTitle: "Extending Dapr"
 weight: 10
 description: "Create your own components"
 ---

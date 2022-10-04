@@ -6,8 +6,45 @@ weight: 250
 description: "Extending Dapr with external gRPC-based components"
 ---
 
-[gRPC-based](https://grpc.io/) Dapr components are typically run as containers or processes that communicate with the Dapr main process via [Unix Domain Sockets](https://en.wikipedia.org/wiki/Unix_domain_socket).
+## Components and Pluggable Components
 
+Out of the box, Dapr [building blocks] come with integrations to a wide range of cloud providers and open source solutions. We call each  of these individual integrations _"components"_. For instance, a input biding integration for MySql is a _component_ and a state store integration for MySQL would be a different component. 
+
+<img src="/images/concepts-building-blocks.png" width=250>
+
+Sometimes one needs to integrate Dapr with something for which there is no existing component. When that happens, it might be time to invest on the creation of a new component.
+
+Traditionally, Dapr components are
+* written in Go,
+* are run as part of the same executable as Dapr itself,
+* integrated directly with Dapr codebase,
+* are distributed and hosted with the rest of Dapr codebase.
+
+Creating a new component for Dapr is not a huge undertaking and doing so helps not only a single developer or team but the whole Dapr community.
+
+There are circumstances for which creating a traditional Dapr component might not be feasible. For instance, for teams with no familiarity with Go. Or teams that don't want to depend on Dapr release cycle or community process for onboarding new components. Or even teams that don't want or, for a variety of reasons, can't integrate their component codebase with Dapr. For those situations there is an alternative method of extending Dapr with new functionality: gRPC pluggable components.
+
+### gRPC Pluggable component
+
+<!-- TODO what of gRPC pluggable components? -->
+gRPC Pluggable Components as an alternative way of adding new integrations and functionality to Dapr. They differ from "traditional" or (embedded?) components in the following ways:
+
+* They can be written in any [gRPC-supported programming language](https://grpc.io/docs/languages/).
+* They run in a distinct process, container or pod than Dapr itself.
+* They integrate with Dapr by means well defined SPI (Service Provider Interface) defined using [gRPC] through [Unix Domain Sockets][UDS].
+* They can be distributed independently from Dapr itself, on their own repository, with their own release cycle.
+
+`Insert picture of a pluggable component here`
+
+<!-- Component: is a piece of (Go) code that bridges Dapr concepts, formats and behavior to the ones used by the new integration. -->
+
+<!-- TODO why of gRPC pluggable components? -->
+<!-- What is cool interesting about developing components as gRPC pluggable components? What are the benefits? -->
+
+[gRPC-based][gRPC] Dapr components are typically run as containers or processes that communicate with the Dapr main process via [Unix Domain Sockets][UDS].
+
+
+<!-- TODO how of gRPC pluggable components? -->
 ## Developing a Pluggable Component from scratch
 
 {{< tabs ".NET" >}}
@@ -17,8 +54,9 @@ description: "Extending Dapr with external gRPC-based components"
 
 For this tutorial, you must:
 
-1. Have some knowledge of how to use and build services using [gRPC and protocol buffers](https://grpc.io/). In doubt, check the their [Quick Start](https://grpc.io/docs/languages/csharp/quickstart/) and [Basics tutorial](https://grpc.io/docs/languages/csharp/quickstart/).
+1. Have some knowledge of how to use and build services using [gRPC and protocol buffers][gRPC]. In doubt, check the their [Quick Start](https://grpc.io/docs/languages/csharp/quickstart/) and [Basics tutorial](https://grpc.io/docs/languages/csharp/quickstart/).
 2. Use a [gRPC-supported programming language](https://grpc.io/docs/languages/).
+3. Have an operating system that supports Unix Domain Sockets.
 
 For simplicity, all code samples uses the generated code from the [protoc](https://developers.google.com/protocol-buffers/docs/downloads) tool or supported gRPC build tools by languages.
 
@@ -340,3 +378,7 @@ public class MemStoreService : StateStore.StateStoreBase
 
 - Follow these guides on:
   - [How-To: Use a gRPC-based Pluggable Component]({{< ref using-grpc-components.md >}})
+
+[building blocks]: {{< ref building-blocks-concept >}}
+[gRPC]: https://grpc.io/
+[UDS]: https://en.wikipedia.org/wiki/Unix_domain_socket
